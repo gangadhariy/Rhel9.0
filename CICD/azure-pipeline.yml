@@ -1,0 +1,43 @@
+trigger:
+- dev
+
+
+variables:
+- group: credentials
+
+resources:
+- repo: self
+
+stages:
+- stage: DownloadRhel9ISO
+  jobs:
+  - job: Rhel9ISO
+    timeoutInMinutes: 50
+    displayName: Download-Rhel9-ISO
+    pool:
+      name: Self-hosted
+      demands:
+      - agent.name -equals packer-VM
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          ./Powershell-Scripts/Rhel9.0-Iso.ps1
+
+- stage: Build
+  displayName: Packer Build
+  jobs:
+  - job: Build
+    timeoutInMinutes: 500
+    displayName: Build
+    pool:
+      name: Self-hosted
+      demands:
+      - agent.name -equals packer-VM
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          ./Powershell-Scripts/Build.ps1

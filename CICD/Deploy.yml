@@ -1,0 +1,84 @@
+name: UploadToAbs
+
+trigger: none
+
+variables:
+- group: credentials
+
+resources:
+  pipelines:
+  - pipeline: BuildUbuntu2204-Gokul   # Name of the pipeline resource
+    source: BuildUbuntu2204-Gokul # Name of the pipeline referenced by the pipeline resource
+    trigger: true # enable the trigger
+    
+stages:
+- stage: Upload
+  jobs:
+  - job: Upload
+    timeoutInMinutes: 100
+    displayName: Upload
+    pool:
+      name: Self-hosted
+      demands:
+      - agent.name -equals packer-VM
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          ./Powershell-Scripts/Upload.ps1
+  displayName: Upload Ubuntu2204 to ABS
+
+- stage: CreateVmImage
+  jobs:
+  - job: VmImage
+    timeoutInMinutes: 50
+    displayName: VM-Image
+    pool:
+      name: Self-hosted
+      demands:
+      - agent.name -equals packer-VM
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          ./Powershell-Scripts/VM-Image.ps1
+
+  displayName: VM-Image
+
+- stage: Deploy
+  jobs:
+  - job: Deploy
+    timeoutInMinutes: 50
+    displayName: Deploy-VM
+    pool:
+      name: Self-hosted
+      demands:
+      - agent.name -equals packer-VM
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          ./Powershell-Scripts/Deploy.ps1
+
+  displayName: Deploy-VM
+
+- stage: Cleanup
+  jobs:
+  - job: Cleanup
+    timeoutInMinutes: 50
+    displayName: Cleanup
+    pool:
+      name: Self-hosted
+      demands:
+      - agent.name -equals packer-VM
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          ./Powershell-Scripts/Clean.ps1
+
+  displayName: Cleanup
